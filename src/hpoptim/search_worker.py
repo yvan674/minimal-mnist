@@ -87,9 +87,14 @@ class SearchWorker(Worker):
         self.run_count = 0
 
         self.logging_path = logging_path
-        self.train_data = MNIST(data_path, transform=ToTensor())
-        self.test_data = MNIST(data_path, train=False, transform=ToTensor())
+        self.train_data = MNIST(data_path, download=True, transform=ToTensor())
+        self.test_data = MNIST(data_path, download=True,train=False,
+                               transform=ToTensor())
 
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
 
     def compute(self, config, budget, **kwargs):
         """Runs the training session.
@@ -106,6 +111,9 @@ class SearchWorker(Worker):
             dict: dictionary with fields 'loss' (float) and 'info' (dict)
         """
         # Start with printouts
+        print("\n\n")
+        print("================================================================"
+              "=======")
         print("\nStarting run {} with config:.".format(self.run_count))
         print("    Optimizer: {}".format(config['optimizer']))
         print("    Learning rate: {}".format(config['lr']))
@@ -122,7 +130,7 @@ class SearchWorker(Worker):
         network = FCNetwork(784, 10, config['first_layer'],
                             config['second_layer'],
                             (config['leaky1'], config['leaky2'],
-                             config['leaky3']))
+                             config['leaky3'])).to(device=self.device)
 
         if config['optimizer'] == 'sgd':
             optimizer = SGD(network.parameters(), config['lr'],
@@ -141,6 +149,8 @@ class SearchWorker(Worker):
             # Do training loop
             network.train()
             for i, (img, cls) in enumerate(train_loader):
+                img = img.to(self.device)
+                cls = cls.to(self.device)
                 optimizer.zero_grad()
                 h1, h2, out = network(img)
                 out = out.softmax(1)
@@ -148,10 +158,10 @@ class SearchWorker(Worker):
 
                 # Do backprop
                 if i % int(1000 / (config['bs'] / 4)) == 0:
-                    print("Iteration {},    \tepoch: {}, \tLoss: {},  "
-                          "\taccuracy: {}"
+                    print("Iteration {},    \tepoch: {}, \tLoss: {:.4f},  "
+                          "\taccuracy: {:.2f}%"
                           .format(i + 1, epoch + 1, loss.item(),
-                                  self.calc_batch_accuracy(out, cls)))
+                                  self.calc_batch_accuracy(out, cls) * 100))
                 loss.backward()
                 optimizer.step()
 
@@ -162,10 +172,12 @@ class SearchWorker(Worker):
             network, loss_crit, test_loader)
 
         # Print out results
-        print("Validation accuracy: {:.4f %}".format(validation_accuracy
+        print("================================================================"
+              "=======")
+        print("Validation accuracy: {:.4f}%".format(validation_accuracy
                                                      * 100.))
         print("Validation loss:     {:.4f}".format(validation_loss))
-        print("Training accuracy:   {:.4f}%".format(train_acc))
+        print("Training accuracy:   {:.4f}%".format(train_acc * 100))
         print("Training loss:       {:.4f}".format(train_loss))
 
         return {'loss': 1 - validation_accuracy,
@@ -191,6 +203,8 @@ class SearchWorker(Worker):
         # Use network but without updating anything
         with torch.no_grad():
             for i, (img, cls) in enumerate(data_loader):
+                img = img.to(self.device)
+                cls = cls.to(self.device)
                 h1, h2, out = network(img)
                 out = out.softmax(1)
                 loss_val += criterion(out, cls).item()
