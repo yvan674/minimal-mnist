@@ -17,10 +17,14 @@ The hyperparameters we will be optimizing are as follows:
 | Batch size     | int            | [4, 256]         |                        |
 | First layer    | int            | [16, 64]         | Number of nodes in the |
 |                |                |                  | first FCN layer        |
-| Second layer   | int            | [8, 64]         | Number of nodes in the |
+| Second layer   | int            | [8, 64]          | Number of nodes in the |
 |                |                |                  | second FCN layer       |
-| Leaky ReLU     | categorical    | {bool, bool,     | The set of boolean     |
-|                |                | bool}            | combinations           |
+| Leaky 1        | categorical    | {true, false}    | Whether the layer 1    |
+|                |                |                  | should use a leaky ReLU|
+| Leaky 2        | categorical    | {true, false}    | Whether the layer 2    |
+|                |                |                  | should use a leaky ReLU|
+| Leaky 3        | categorical    | {true, false}    | Whether the layer 3    |
+|                |                |                  | should use a leaky ReLU|
 +----------------+----------------+------------------+------------------------+
 
 +-------------------+----------------+
@@ -33,7 +37,9 @@ The hyperparameters we will be optimizing are as follows:
 | Batch size        | bs             |
 | First layer       | first_layer    |
 | Second layer      | second_layer   |
-| Leaky ReLU        | leaky          |
+| Leaky 1           | leaky1         |
+| Leaky 2           | leaky2         |
+| Leaky 3           | leaky3         |
 +-------------------+----------------+
 
 Author:
@@ -99,17 +105,6 @@ class SearchWorker(Worker):
         Returns:
             dict: dictionary with fields 'loss' (float) and 'info' (dict)
         """
-        leaky_configs = (
-            [False, False, False],
-            [False, False, True],
-            [False, True, False],
-            [False, True, True],
-            [True, False, False],
-            [True, False, True],
-            [True, True, False],
-            [True, True, True]
-        )
-
         # Start with printouts
         print("\nStarting run {} with config:.".format(self.run_count))
         print("    Optimizer: {}".format(config['optimizer']))
@@ -117,21 +112,24 @@ class SearchWorker(Worker):
         print("    Batch size: {}".format(config['bs']))
         print("    First layer: {}".format(config['first_layer']))
         print("    Second layer: {}".format(config['second_layer']))
-        print("    Leaky config: {}".format(leaky_configs[config['leaky']]))
+        print("    Leaky config: {}, {}, {}".format(config['leaky1'],
+                                                    config['leaky2'],
+                                                    config['leaky3']))
         # Set network, dataloader, optimizer, and loss criterion
         train_loader = DataLoader(self.train_data, config['bs'], shuffle=True)
         test_loader = DataLoader(self.test_data, config['bs'], shuffle=True)
 
         network = FCNetwork(784, 10, config['first_layer'],
                             config['second_layer'],
-                            leaky_configs[config['leaky']])
+                            (config['leaky1'], config['leaky2'],
+                             config['leaky3']))
 
         if config['optimizer'] == 'sgd':
             optimizer = SGD(network.parameters(), config['lr'],
                             config['momentum'])
         else:
             optimizer = Adam(network.parameters(), config['lr'],
-                             config['epsilon'])
+                             eps=config['epsilon'])
         loss_crit = CrossEntropyLoss()
 
         # Increment run count number
@@ -162,6 +160,13 @@ class SearchWorker(Worker):
         )
         validation_loss, validation_accuracy = self.evaluate_network(
             network, loss_crit, test_loader)
+
+        # Print out results
+        print("Validation accuracy: {:.4f %}".format(validation_accuracy
+                                                     * 100.))
+        print("Validation loss:     {:.4f}".format(validation_loss))
+        print("Training accuracy:   {:.4f}%".format(train_acc))
+        print("Training loss:       {:.4f}".format(train_loss))
 
         return {'loss': 1 - validation_accuracy,
                 'info': {'validation accuracy': validation_accuracy,
@@ -237,10 +242,12 @@ class SearchWorker(Worker):
         second_layer = CS.UniformIntegerHyperparameter('second_layer', lower=8,
                                                        upper=64)
 
-        leaky = CS.CategoricalHyperparameter('leaky', [0, 1, 2, 3, 4, 5,
-                                                       6, 7])
+        leaky1 = CS.CategoricalHyperparameter('leaky1', [True, False])
+        leaky2 = CS.CategoricalHyperparameter('leaky2', [True, False])
+        leaky3 = CS.CategoricalHyperparameter('leaky3', [True, False])
         cs.add_hyperparameters([lr, optimizer, momentum, epsilon, bs,
-                                first_layer, second_layer, leaky])
+                                first_layer, second_layer, leaky1, leaky2,
+                                leaky3])
         cs.add_condition(CS.EqualsCondition(momentum, optimizer, 'sgd'))
         cs.add_condition(CS.EqualsCondition(epsilon, optimizer, 'adam'))
 
