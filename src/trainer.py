@@ -11,9 +11,9 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 
 from torchvision.datasets import MNIST
-from torchvision.transforms.transforms import ToTensor, ToPILImage
+from torchvision.transforms.transforms import ToTensor
 
-from model import FCNetwork
+from .model import FCNetwork
 
 
 class Trainer:

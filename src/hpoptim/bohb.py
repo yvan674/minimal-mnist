@@ -19,7 +19,7 @@ import hpbandster.core.nameserver as hpns
 import hpbandster.core.result as hpres
 
 from hpbandster.optimizers import BOHB as BOHB
-from hpoptim import SearchWorker
+from . import SearchWorker
 
 import logging
 
