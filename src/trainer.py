@@ -121,8 +121,9 @@ class Trainer:
 
 if __name__ == '__main__':
     current_time_str = datetime.now().strftime('%Y-%m-%d-%H_%M_%S')
-    t = Trainer('/workspace/MNIST/', join("/workspace/Results",
-                                          current_time_str))
+    t = Trainer('E:\Offline Docs\Git\minimal-mnist\MNIST',
+                join("E:\Offline Docs\Git\minimal-mnist\debugging\\",
+                     current_time_str))
     t.train(38, 16, 36, (False, True, False), 'sgd',
             {'momentum': 0.9409782496856666,
              'lr': 0.0048795787201773}, 250)
