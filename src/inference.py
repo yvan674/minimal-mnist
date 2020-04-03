@@ -12,8 +12,19 @@ import torch
 from torchvision.datasets import MNIST
 
 import numpy as np
+from argparse import ArgumentParser
 
 from model import FCNetwork
+
+
+def parse_args():
+    parser = ArgumentParser(description='runs inference on the network')
+    parser.add_argument('ROOT', type=str,
+                        help='path to the root of the dataset')
+    parser.add_argument('MODEL', type=str,
+                        help='model state_dict to be loaded')
+    return parser.parse_args()
+
 
 class AI:
     def __init__(self, root, state_dict_path):
@@ -62,10 +73,10 @@ class AI:
             h1, h2, out = self.model(tensor_image)
             out = out.argmax(1)
 
-        return image, int(out[0])
+        return image, int(out[0]), h1, h2
 
 
 if __name__ == '__main__':
-    ai = AI('E:\Offline Docs\Git\minimal-mnist\MNIST',
-            'E:\Offline Docs\Git\minimal-mnist\\best-model.pth')
+    args = parse_args()
+    ai = AI(args.ROOT, args.MODEL)
     ai.infer_next()
