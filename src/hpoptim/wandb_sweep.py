@@ -94,6 +94,8 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
     # Load model
     model = FCNetwork(784, 10, first_layer, second_layer, (False, False))
 
+    layer_crit = (first_layer + second_layer) / 160
+
     # Optimizer and loss function
     optimizer = SGD(model.parameters(), lr, momentum, weight_decay=decay)
     loss_criterion = CrossEntropyLoss()
@@ -131,7 +133,8 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
             validation_acc /= len(test_loader)
             print("Epoch{} validation accuracy: {}".format(epoch,
                                                            validation_acc))
-        wandb.log({'accuracy': validation_acc},
+        wandb.log({'accuracy': validation_acc,
+                   'maximization_criterion': validation_acc - layer_crit},
                   step=steps_per_epoch * (epoch + 1))  # + 1 since end of epoch
 
         torch.save({
