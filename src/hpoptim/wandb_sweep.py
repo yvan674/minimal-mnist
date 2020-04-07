@@ -94,7 +94,7 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
     # Load model
     model = FCNetwork(784, 10, first_layer, second_layer, (False, False))
 
-    layer_crit = (first_layer + second_layer) / 160
+    layer_crit = (first_layer + second_layer) / 80
 
     # Optimizer and loss function
     optimizer = SGD(model.parameters(), lr, momentum, weight_decay=decay)
