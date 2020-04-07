@@ -62,7 +62,7 @@ def calc_batch_accuracy(output: torch.Tensor,
 
 def train(root: str, results_dir: str, batch_size: int, first_layer: int,
           second_layer: int, lr: float, momentum: float, decay: float,
-          epochs: int=150):
+          epochs: int):
     """Performs training on the network.
 
     Args:
@@ -76,6 +76,8 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
         decay: Decay of the optimizer
         epochs: Number of epochs to train for.
     """
+    epochs = 150 if epochs is None else epochs
+
     # Create results directory first
     r_dir = join(results_dir, dt.now().strftime('%y-%m-%d__%H-%M-%S'))
     while exists(r_dir):
