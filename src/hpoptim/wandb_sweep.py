@@ -123,6 +123,8 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
             wandb.log({'loss': loss.item()}, step=steps_done + i + 1)
             # Do backprop
             loss.backward()
+            # Do grad clip
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 4.0)
             optimizer.step()
 
         # At the end of the epoch, do validation
