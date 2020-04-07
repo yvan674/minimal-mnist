@@ -27,7 +27,7 @@ hyperparameter_defaults = {
     'lr': 1e-4,
     'momentum': 0.9,
     'decay': 0.1,
-    'epochs': 40,
+    'epochs': 250,
 }
 
 wandb.init(config=hyperparameter_defaults, project="fully_connected_mnist")
@@ -62,7 +62,7 @@ def calc_batch_accuracy(output: torch.Tensor,
 
 def train(root: str, results_dir: str, batch_size: int, first_layer: int,
           second_layer: int, lr: float, momentum: float, decay: float,
-          epochs: int):
+          epochs: int=150):
     """Performs training on the network.
 
     Args:
