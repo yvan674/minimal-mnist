@@ -124,7 +124,7 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
             # Do backprop
             loss.backward()
             # Do grad clip
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 4.0)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
         # At the end of the epoch, do validation
