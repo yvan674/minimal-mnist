@@ -29,9 +29,7 @@ hyperparameter_defaults = {
     'decay': 0.1
 }
 
-
-wandb.init(config=hyperparameter_defaults, project='minimal-mnist')
-config = wandb.config
+wandb.init(config=hyperparameter_defaults, project="fully_connected_mnist")
 
 
 def parse_args():
@@ -59,7 +57,7 @@ def calc_batch_accuracy(output: torch.Tensor,
     return float(correct) / float(target.shape[0])
 
 
-def train(root: str, results_dir:str, batch_size: int, first_layer: int,
+def train(root: str, results_dir: str, batch_size: int, first_layer: int,
           second_layer: int, lr: float, momentum: float, decay: float,
           epochs: int):
     """Performs training on the network.
@@ -139,3 +137,10 @@ def train(root: str, results_dir:str, batch_size: int, first_layer: int,
             'optimizer_state_dict': optimizer.state_dict()},
             join(r_dir, 'epoch_{}.pth'.format(epoch))
         )
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    root = 'MNIST/'
+    results_dir = 'workdir/'
+    train(root, results_dir, **vars(args))
