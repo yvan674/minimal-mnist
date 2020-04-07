@@ -41,6 +41,7 @@ def parse_args():
     p.add_argument("--lr", type=float)
     p.add_argument("--momentum", type=float)
     p.add_argument("--decay", type=float)
+    return p.parse_args()
 
 
 def calc_batch_accuracy(output: torch.Tensor,
