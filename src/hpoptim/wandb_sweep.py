@@ -26,7 +26,8 @@ hyperparameter_defaults = {
     'second_layer': 10,
     'lr': 1e-4,
     'momentum': 0.9,
-    'decay': 0.1
+    'decay': 0.1,
+    'epochs': 40,
 }
 
 wandb.init(config=hyperparameter_defaults, project="fully_connected_mnist")
