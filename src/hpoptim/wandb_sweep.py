@@ -87,7 +87,7 @@ def train(root: str, results_dir: str, batch_size: int, first_layer: int,
     train_data = MNIST(root, transform=ToTensor())
     train_loader = DataLoader(train_data, batch_size, shuffle=True)
     test_data = MNIST(root, train=False, transform=ToTensor())
-    test_loader = DataLoader(test_data, batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size, shuffle=False)
 
     steps_per_epoch = len(train_loader)
 
