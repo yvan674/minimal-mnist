@@ -13,6 +13,8 @@ from torchvision.datasets import MNIST
 
 import numpy as np
 from argparse import ArgumentParser
+from os import getcwd
+from os.path import join
 
 from model import FCNetwork
 
@@ -78,5 +80,6 @@ class AI:
 
 if __name__ == '__main__':
     args = parse_args()
-    ai = AI(args.ROOT, args.MODEL)
+    d = '/tmp/pycharm_project_204/'
+    ai = AI(join(d, args.ROOT), join(d, args.MODEL))
     ai.infer_next()
