@@ -22,6 +22,9 @@ The following configuration yields a validation accuracy of 94.5% after just 10 
 |                           | Learning Rate     | 0.0038795787201773 |
 |                           | Momentum          | 0.9409782496856666 |
 
+# Numpy and Torch
+Both a numpy version as well as a torch version of the model has been included.
+
 # Visualization
 Model prediction visualization can be done using `visualizer.py`.
 This script visualizes the input from MNIST, the network prediction, and the network activations in the model.
