@@ -8,15 +8,19 @@ Author:
 Created on:
     April 3, 2020
 """
-import torch
-from torchvision.datasets import MNIST
+try:
+    import torch
+    from torchvision.datasets import MNIST
+    from model import FCNetwork as NNModel
+    USE_NUMPY = False
+except ImportError:
+    from model import NumpyModel as NNModel
+    from utils.mnist_data import MNIST
+    USE_NUMPY = True
 
 import numpy as np
 from argparse import ArgumentParser
-from os import getcwd
 from os.path import join
-
-from model import FCNetwork
 
 
 def parse_args():
@@ -35,19 +39,30 @@ class AI:
         Args:
             root (str): Path to the MNIST data root.
             state_dict_path (str): Path to the weight .pth file
+            run_with_numpy (bool): Whether or not to run solely within numpy.
         """
         self.root = root
         self.data = MNIST(root, train=False)
+        if USE_NUMPY:
+            state_dict = np.load(state_dict_path, allow_pickle=True).item()
 
-        self.layer_1_neurons = 16
-        self.layer_2_neurons = 36
+        else:
+            state_dict = torch.load(state_dict_path)
 
-        self.model = FCNetwork(784, 10, self.layer_1_neurons,
-                               self.layer_2_neurons, (False, False))
+        in_connections = state_dict['fc0.0.weight'].shape[1]
+        out_connections = state_dict['fc2.bias'].shape[0]
 
-        state_dict = torch.load(state_dict_path)['model_state_dict']
+        self.layer_1_neurons = state_dict['fc0.0.bias'].shape[0]
+        self.layer_2_neurons = state_dict['fc1.0.bias'].shape[0]
+
+        self.model = NNModel(in_connections,
+                             out_connections,
+                             self.layer_1_neurons,
+                             self.layer_2_neurons)
+        if not USE_NUMPY:
+            self.model.eval()
+
         self.model.load_state_dict(state_dict)
-        self.model.eval()
         self.counter = 0
 
     def infer_next(self, image=None) -> (np.ndarray, int):
@@ -69,11 +84,18 @@ class AI:
             image = np.array(self.data[self.counter][0])
             self.counter += 1
 
-        tensor_image = torch.tensor(image / 255, dtype=torch.float).unsqueeze(0)
-
-        with torch.no_grad():
-            h1, h2, out = self.model(tensor_image)
+        if USE_NUMPY:
+            image_arr = image.reshape([1, 1, image.shape[0], image.shape[1]])
+            image_arr = image_arr.astype(dtype=float) / 255.
+            h1, h2, out = self.model(image_arr)
             out = out.argmax(1)
+        else:
+            tensor_image = torch.tensor(image, dtype=torch.float) / 255.
+            tensor_image= tensor_image.unsqueeze(0)
+
+            with torch.no_grad():
+                h1, h2, out = self.model(tensor_image)
+                out = out.argmax(1)
 
         return image, int(out[0]), h1, h2
 

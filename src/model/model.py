@@ -12,7 +12,7 @@ import torch.nn as nn
 class FCNetwork(nn.Module):
     def __init__(self, in_connections: int, num_classes: int,
                  first_layer: int, second_layer: int,
-                 leaky: tuple):
+                 leaky: tuple = (False, False)):
         """Creates the FC network.
 
         Args:
