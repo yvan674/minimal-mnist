@@ -59,7 +59,7 @@ class PredictionOutput(tk.Frame):
 class NetworkVisualization(tk.Frame):
     def __init__(self, num_l1, num_l2, master=None):
         """Class for frames that show the network visualization"""
-        self.height = 300
+        self.height = 250
         self.width = 500
         super().__init__(master=master, width=self.width, height=self.height)
 
@@ -96,9 +96,8 @@ class NetworkVisualization(tk.Frame):
             offset += diameter / 2
 
         initial_x = int(self.width / 2 - offset)
-        initial_y = int((self.height - 2 * y_pad) / 2 * row)
+        initial_y = int(((self.height) / 4) * (row + 1))
         initial_y -= int(diameter / 2)
-        initial_y += y_pad
 
         for i in range(n):
             start_x = initial_x + (x_sep * i)
@@ -195,7 +194,6 @@ class VisualizerUI:
         self.bf.columnconfigure(1, minsize=220)
         self.bf.rowconfigure(0, minsize=140)
         self.bf.rowconfigure(1, minsize=140)
-        self.bf.rowconfigure(2, minsize=300)
 
         self.image_frame = ImageFrame(self.bf)
         self.image_frame.grid(row=0, column=0, rowspan=2)
@@ -216,8 +214,7 @@ class VisualizerUI:
             model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-mo' \
                             'del.npy'
         else:
-            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-mo' \
-                            'del.pth'
+            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\7.pth'
         self.ai = AI('E:\\Offline Docs\\Git\\minimal-mnist\\MNIST',
                      model_weights)
 
@@ -241,7 +238,7 @@ class VisualizerUI:
                 self._job = None
         else:
             self.play_var.set('Stop')
-            self.root.after(1, self.get_next)
+            self._job = self.root.after(1, self.get_next)
 
     def get_next(self):
         """Predicts the next values."""
@@ -251,7 +248,7 @@ class VisualizerUI:
         self.network_vis.update_neurons(h1, h2, pred)
 
         if self.playing:
-            self.root.after(2000, self.get_next)
+            self._job = self.root.after(2000, self.get_next)
 
 
 if __name__ == '__main__':

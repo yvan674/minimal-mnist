@@ -20,7 +20,7 @@ except ImportError:
 
 import numpy as np
 from argparse import ArgumentParser
-from os.path import join
+from time import time
 
 
 def parse_args():
@@ -39,13 +39,12 @@ class AI:
         Args:
             root (str): Path to the MNIST data root.
             state_dict_path (str): Path to the weight .pth file
-            run_with_numpy (bool): Whether or not to run solely within numpy.
         """
         self.root = root
         self.data = MNIST(root, train=False)
+
         if USE_NUMPY:
             state_dict = np.load(state_dict_path, allow_pickle=True).item()
-
         else:
             state_dict = torch.load(state_dict_path)
 
@@ -82,7 +81,6 @@ class AI:
                 self.counter = 0
 
             image = np.array(self.data[self.counter][0])
-            self.counter += 1
 
         if USE_NUMPY:
             image_arr = image.reshape([1, 1, image.shape[0], image.shape[1]])
@@ -91,17 +89,32 @@ class AI:
             out = out.argmax(1)
         else:
             tensor_image = torch.tensor(image, dtype=torch.float) / 255.
-            tensor_image= tensor_image.unsqueeze(0)
+            tensor_image = tensor_image.unsqueeze(0)
 
             with torch.no_grad():
                 h1, h2, out = self.model(tensor_image)
                 out = out.argmax(1)
 
+        self.counter += 1
         return image, int(out[0]), h1, h2
 
 
 if __name__ == '__main__':
     args = parse_args()
-    d = '/tmp/pycharm_project_204/'
-    ai = AI(join(d, args.ROOT), join(d, args.MODEL))
-    ai.infer_next()
+    print(f"Running on {'numpy' if USE_NUMPY else 'torch'}")
+
+    print('loading model...')
+    start_time = time()
+    ai = AI(args.ROOT, args.MODEL)
+    print(f"done! t={time() - start_time:.3f}s")
+
+    start_time = time()
+    for i in range(10000):
+        _, out, _, _ = ai.infer_next()
+        if i % 1000 == 0:
+            print(f'Iteration {i}: pred={out}')
+    time_del = time() - start_time
+    time_del /= 10000
+
+    print(f'done! t per iter={time_del:.6f}s')
+
