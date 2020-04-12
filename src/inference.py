@@ -43,10 +43,18 @@ class AI:
         self.root = root
         self.data = MNIST(root, train=False)
 
+
         if USE_NUMPY:
             state_dict = np.load(state_dict_path, allow_pickle=True).item()
         else:
             state_dict = torch.load(state_dict_path)
+
+        self.fc1_weight = state_dict['fc1.0.weight'].detach().cpu()
+        self.fc2_weight = state_dict['fc2.weight'].detach().cpu()
+
+        if not USE_NUMPY:
+            self.fc1_weight = self.fc1_weight.numpy()
+            self.fc2_weight = self.fc2_weight.numpy()
 
         in_connections = state_dict['fc0.0.weight'].shape[1]
         out_connections = state_dict['fc2.bias'].shape[0]

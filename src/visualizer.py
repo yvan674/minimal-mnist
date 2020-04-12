@@ -8,7 +8,7 @@ import numpy as np
 from math import floor
 
 from inference import AI
-from colors import COLORS
+from colors import LINEAR, DIVERGING
 from importlib.util import find_spec
 
 USE_NUMPY = False if find_spec('torch') is not None else True
@@ -57,11 +57,13 @@ class PredictionOutput(tk.Frame):
 
 
 class NetworkVisualization(tk.Frame):
-    def __init__(self, num_l1, num_l2, master=None):
+    def __init__(self, num_l1, num_l2, fc1_weights, fc2_weights, master=None):
         """Class for frames that show the network visualization"""
-        self.height = 250
-        self.width = 500
+        self.height = 800
+        self.width = 1000
         super().__init__(master=master, width=self.width, height=self.height)
+
+        self.fc_weights = [fc1_weights, fc2_weights]
 
         self.current_h = None
         self.current_pred = 0
@@ -70,20 +72,47 @@ class NetworkVisualization(tk.Frame):
         self.canvas = tk.Canvas(self, width=self.width, height=self.height)
 
         neurons_per_layer = [num_l1, num_l2, 10]
-        x_sep = 24
-        diameter = 18
-        y_pad = 50
+        x_sep = 60
+        diameter = 50
         self.layers = []
+        self.connections = []
+        self.ca = []  # connection activations
 
         for i in range(3):
+            # Create the regular neurons
             self.layers.append(self.create_neurons(neurons_per_layer[i], i,
-                                                   x_sep, diameter, y_pad))
+                                                   x_sep, diameter))
+
+        for i in range(2):
+            # Create the connections between neurons
+            self.connections.append(self.create_connections(i))
+
+        # Move the neurons above the connections
+        self.canvas.tag_raise('neuron')
 
         self.canvas.pack()
         self._job = None
 
+    def create_connections(self, layer: int):
+        """Creates connections between neurons of the layers."""
+        lines = []
+        for prev in self.layers[layer]:
+            bbox = self.canvas.bbox(prev)
+            start_point = (floor((bbox[0] + bbox[2]) / 2),
+                           bbox[3])
+            for next in self.layers[layer + 1]:
+                bbox = self.canvas.bbox(next)
+                end_point = (floor((bbox[0] + bbox[2]) / 2),
+                             bbox[1])
+                coords = (*start_point, *end_point)
+                lines.append(self.canvas.create_line(coords,
+                                                     fill=DIVERGING[128]))
+
+        return lines
+
     def create_neurons(self, n: int, row: int, x_sep: int,
-                       diameter: int, y_pad: int) -> list:
+                       diameter: int) -> list:
+        """Create neurons for each layer."""
         out = []
         # Calculate initial x and initial y to center the circles.
         if n % 2 == 0:
@@ -104,7 +133,7 @@ class NetworkVisualization(tk.Frame):
             start_y = initial_y
             out.append(self.canvas.create_oval(
                 ((start_x, start_y), (start_x + diameter, start_y + diameter)),
-                fill=COLORS[0]
+                fill=LINEAR[0], tag='neuron'
             ))
         return out
 
@@ -126,15 +155,25 @@ class NetworkVisualization(tk.Frame):
             self.after_cancel(self._job)
             self._job = None
 
-        self.current_h = [h1, h2]
-        for i in range(len(self.current_h)):
+        self.current_h = [h1.reshape(len(self.layers[0])),
+                          h2.reshape(len(self.layers[1]))]
+        self.ca = []
+        self.current_pred = pred
+        self.current_tick = 0
+
+        for i in range(2):
             # Reshapse to a flat layer, normalizes it, turns it to a value out
             # of 255, then turns it into a numpy array.
             h = self.current_h[i]
-            h = (h.reshape(len(self.layers[i])) / h.max())
-
             if not USE_NUMPY:
                 h = h.numpy()
+
+            # Get connection activations
+            fw = self.fc_weights[i]
+            activations = h * fw
+            activations /= np.max(np.abs(activations)) * 2
+            self.ca.append(activations.flatten())
+            h /= h.max()
 
             # Turns it into an integer value, clips it to 0 to 255, and turns it
             # into a python list.
@@ -143,32 +182,48 @@ class NetworkVisualization(tk.Frame):
 
         for layer in self.layers:
             for neuron in layer:
-                self.canvas.itemconfig(neuron, fill=COLORS[0])
+                self.canvas.itemconfig(neuron, fill=LINEAR[0])
 
-        self.current_pred = pred
-        self.current_tick = 0
+        for layer in self.connections:
+            for connection in layer:
+                self.canvas.itemconfig(connection, fill=DIVERGING[128])
+
         self._animate_neurons()
 
     def _animate_neurons(self):
         """Animates the neurons."""
-        layer = floor(self.current_tick / 255)
+        step = floor(self.current_tick / 255)
         t_val = self.current_tick % 255
-        if layer < 2:
-            for j, n in enumerate(self.current_h[layer]):
-                self.canvas.itemconfig(self.layers[layer][j],
-                                       fill=COLORS[floor(n * t_val)])
-        elif layer == 2:
+        if step == 4:
+            # Final layer animation, aka output layer
             for i in range(10):
                 if i == self.current_pred - 1:
                     self.canvas.itemconfig(
                         self.layers[2][i],
-                        fill=COLORS[floor(1. * t_val)])
+                        fill=LINEAR[floor(1. * t_val)])
                 else:
-                    self.canvas.itemconfig(self.layers[2][i], fill=COLORS[0])
-        if layer < 3:
-            self.current_tick += 3
+                    self.canvas.itemconfig(self.layers[2][i], fill=LINEAR[0])
+        elif step in (0, 2):
+            # Normal neurons
+            layer = int(step / 2)
+            for j, n in enumerate(self.current_h[layer]):
+                self.canvas.itemconfig(self.layers[layer][j],
+                                       fill=LINEAR[floor(n * t_val)])
+
+        elif step in (1, 3):
+            # Animations for connections
+            layer = int((step - 1) / 2)
+            for j, val in enumerate(self.ca[layer]):
+                self.canvas.itemconfig(self.connections[layer][j],
+                                       fill=DIVERGING[floor(val * t_val) + 128])
+
+
+        # Add to tick if still animating
+        if step < 5:
+            self.current_tick += 12
             self._job = self.after(1, self._animate_neurons)
         else:
+            # Done animating the current set
             self.current_tick = 0
 
 
@@ -220,6 +275,8 @@ class VisualizerUI:
 
         self.network_vis = NetworkVisualization(self.ai.layer_1_neurons,
                                                 self.ai.layer_2_neurons,
+                                                self.ai.fc1_weight,
+                                                self.ai.fc2_weight,
                                                 self.bf)
         self.network_vis.grid(row=2, column=0, columnspan=2)
         self.bf.pack()
