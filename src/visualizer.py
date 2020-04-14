@@ -106,7 +106,10 @@ class NetworkVisualization(tk.Frame):
                              bbox[1])
                 coords = (*start_point, *end_point)
                 lines.append(self.canvas.create_line(coords,
-                                                     fill=DIVERGING[128]))
+                                                     fill=DIVERGING[128],
+                                                     smooth=True,
+                                                     splinesteps=50,
+                                                     width=1.5))
 
         return lines
 
@@ -172,7 +175,14 @@ class NetworkVisualization(tk.Frame):
             fw = self.fc_weights[i]
             activations = h * fw
             activations /= np.max(np.abs(activations)) * 2
-            self.ca.append(activations.flatten())
+            activations = activations.flatten()
+            self.ca.append(activations)
+            for j, val in enumerate(activations):
+                item_id = self.connections[i][j]
+                if abs(val) > 0.2:
+                    self.canvas.tag_raise(item_id)
+                else:
+                    self.canvas.tag_lower(item_id)
             h /= h.max()
 
             # Turns it into an integer value, clips it to 0 to 255, and turns it
@@ -188,6 +198,7 @@ class NetworkVisualization(tk.Frame):
             for connection in layer:
                 self.canvas.itemconfig(connection, fill=DIVERGING[128])
 
+
         self._animate_neurons()
 
     def _animate_neurons(self):
@@ -197,7 +208,7 @@ class NetworkVisualization(tk.Frame):
         if step == 4:
             # Final layer animation, aka output layer
             for i in range(10):
-                if i == self.current_pred - 1:
+                if i == self.current_pred:
                     self.canvas.itemconfig(
                         self.layers[2][i],
                         fill=LINEAR[floor(1. * t_val)])
