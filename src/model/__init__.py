@@ -1,3 +1,7 @@
-from .model import FCNetwork
+try:
+    from .model import FCNetwork
+except ImportError:
+    pass
+from .numpy_model import NumpyModel
 
-__all__ = ['FCNetwork']
+__all__ = ['FCNetwork', 'NumpyModel']
