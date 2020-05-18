@@ -28,3 +28,7 @@ Both a numpy version as well as a torch version of the model has been included.
 # Visualization
 Model prediction visualization can be done using `visualizer.py`.
 This script visualizes the input from MNIST, the network prediction, and the network activations in the model.
+
+# Dependencies
+- numpy>=1.18
+- pillow~=7.1

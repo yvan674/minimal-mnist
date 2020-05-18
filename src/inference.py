@@ -13,7 +13,7 @@ try:
     from torchvision.datasets import MNIST
     from model import FCNetwork as NNModel
     USE_NUMPY = False
-except ImportError:
+except ImportError or ModuleNotFoundError:
     from model import NumpyModel as NNModel
     from utils.mnist_data import MNIST
     USE_NUMPY = True
@@ -49,10 +49,9 @@ class AI:
         else:
             state_dict = torch.load(state_dict_path)
 
-        self.fc1_weight = state_dict['fc1.0.weight'].detach().cpu()
-        self.fc2_weight = state_dict['fc2.weight'].detach().cpu()
-
         if not USE_NUMPY:
+            self.fc1_weight = state_dict['fc1.0.weight'].detach().cpu()
+            self.fc2_weight = state_dict['fc2.weight'].detach().cpu()
             self.fc1_weight = self.fc1_weight.numpy()
             self.fc2_weight = self.fc2_weight.numpy()
 
