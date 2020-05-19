@@ -9,6 +9,7 @@ Created on:
     April 3, 2020
 """
 try:
+    raise ImportError
     import torch
     from torchvision.datasets import MNIST
     from model import FCNetwork as NNModel
@@ -71,7 +72,7 @@ class AI:
         self.model.load_state_dict(state_dict)
         self.counter = 0
 
-    def infer_next(self, image=None) -> (np.ndarray, int):
+    def infer_next(self, image=None) -> (np.ndarray, int, any, any):
         """Infer the next number in the list or the given image.
 
         Args:
