@@ -65,7 +65,7 @@ class NetworkVisualization(tk.Frame):
 
         self.fc_weights = [fc1_weights, fc2_weights]
 
-        self.current_h = None
+        self.current_h = []
         self.current_pred = 0
         self.current_tick = 0
 
@@ -100,8 +100,8 @@ class NetworkVisualization(tk.Frame):
             bbox = self.canvas.bbox(prev)
             start_point = (floor((bbox[0] + bbox[2]) / 2),
                            bbox[3])
-            for next in self.layers[layer + 1]:
-                bbox = self.canvas.bbox(next)
+            for after in self.layers[layer + 1]:
+                bbox = self.canvas.bbox(after)
                 end_point = (floor((bbox[0] + bbox[2]) / 2),
                              bbox[1])
                 coords = (*start_point, *end_point)
@@ -128,7 +128,7 @@ class NetworkVisualization(tk.Frame):
             offset += diameter / 2
 
         initial_x = int(self.width / 2 - offset)
-        initial_y = int(((self.height) / 4) * (row + 1))
+        initial_y = int((self.height / 4) * (row + 1))
         initial_y -= int(diameter / 2)
 
         for i in range(n):
@@ -139,12 +139,6 @@ class NetworkVisualization(tk.Frame):
                 fill=LINEAR[0], tag='neuron'
             ))
         return out
-
-    @staticmethod
-    def l_to_hex(l: int) -> str:
-        """Translates a luminosity value in range[0, 255] to hex."""
-        rgb = (l, l, l)
-        return "#%02x%02x%02x" % rgb
 
     def update_neurons(self, h1, h2, pred):
         """Update values of the neurons.
@@ -187,7 +181,7 @@ class NetworkVisualization(tk.Frame):
 
             # Turns it into an integer value, clips it to 0 to 255, and turns it
             # into a python list.
-            h = h.clip(0, 1.).tolist()
+            # h = h.clip(0, 1.).tolist()
             self.current_h[i] = h
 
         for layer in self.layers:
@@ -197,7 +191,6 @@ class NetworkVisualization(tk.Frame):
         for layer in self.connections:
             for connection in layer:
                 self.canvas.itemconfig(connection, fill=DIVERGING[128])
-
 
         self._animate_neurons()
 
@@ -227,7 +220,6 @@ class NetworkVisualization(tk.Frame):
             for j, val in enumerate(self.ca[layer]):
                 self.canvas.itemconfig(self.connections[layer][j],
                                        fill=DIVERGING[floor(val * t_val) + 128])
-
 
         # Add to tick if still animating
         if step < 5:
@@ -280,7 +272,8 @@ class VisualizerUI:
             model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-mo' \
                             'del.npy'
         else:
-            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\7.pth'
+            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-model' \
+                            '.pth'
         self.ai = AI('E:\\Offline Docs\\Git\\minimal-mnist\\MNIST',
                      model_weights)
 
