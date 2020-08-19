@@ -9,7 +9,7 @@ Created on:
     April 3, 2020
 """
 try:
-    raise ImportError
+    # raise ImportError
     import torch
     from torchvision.datasets import MNIST
     from model import FCNetwork as NNModel

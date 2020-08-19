@@ -18,9 +18,9 @@ from colors import LINEAR_TUPLE
 from argparse import ArgumentParser
 
 
-PIXEL_PIN = board.D18
-NUM_PIXELS = 35
-BRIGHTNESS = 0.2
+PIXEL_PIN = board.D32
+NUM_PIXELS = 45
+BRIGHTNESS = 0.3
 ORDER = neopixel.GRB
 
 NN_LAYERS = [10, 15, 10]
@@ -57,13 +57,13 @@ def main(root, model):
                                auto_write=False, pixel_order=ORDER)
     playing = True
     current_tick = 0
-    img, out, h1, h2 = get_next_values(ai)
+    img, out, h0, h1 = get_next_values(ai)
 
     while True:
         if not playing:
             # If it's done playing the animation, do the next one after 1 second
             sleep(1)
-            img, out, h1, h2 = get_next_values(ai)
+            img, out, h0, h1 = get_next_values(ai)
             playing = True
         else:
             step = int(floor(current_tick / 255))
@@ -74,26 +74,33 @@ def main(root, model):
                 for i in range(NN_LAYERS[2]):
                     px_val = NN_LAYERS[0] + NN_LAYERS[1] + i
                     if i == out:
-                        pixels[px_val] = LINEAR_TUPLE[floor(t_val)]
+                        color = LINEAR_TUPLE[floor(t_val)]
+                        pixels[px_val] = color       # Neuron
+                        pixels[px_val + 10] = color  # Number
                     else:
-                        pixels[px_val] = LINEAR_TUPLE[0]
+                        pixels[px_val] = LINEAR_TUPLE[0]       # Neuron
+                        pixels[px_val + 10] = LINEAR_TUPLE[0]  # Number
             elif step < 2:
                 for i in range(NN_LAYERS[step]):
                     if step == 0:
                         px_val = i
-                        h = h1
+                        h = h0
                     else:
                         px_val = NN_LAYERS[0] + i
-                        h = h2
-                    pixels[px_val] = LINEAR_TUPLE[floor(h[i] * t_val)]
+                        h = h1
+
+                    pixels[px_val] = LINEAR_TUPLE[floor(
+                        (h[i] / 255.) * t_val
+                    )]
 
             # Add to tick if still animating and actually color pixels
-            if step < 5:
+            if step < 3:
                 pixels.show()
-                current_tick += 12
+                current_tick += 6
                 sleep(0.001)
             else:
                 current_tick = 0
+                playing = False
 
 
 if __name__ == '__main__':
