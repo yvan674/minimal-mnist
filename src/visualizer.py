@@ -10,6 +10,9 @@ from math import floor
 from inference import AI
 from colors import LINEAR, DIVERGING
 from importlib.util import find_spec
+import os
+
+import argparse
 
 USE_NUMPY = False if find_spec('torch') is not None else True
 
@@ -231,8 +234,12 @@ class NetworkVisualization(tk.Frame):
 
 
 class VisualizerUI:
-    def __init__(self):
-        """Creates a prediction visualizer GUI."""
+    def __init__(self, mnist_root):
+        """Creates a prediction visualizer GUI.
+
+        Args:
+            mnist_root (str): Path to the mnist root file.
+        """
         self.root = tk.Tk()
         self.root.title("MNIST FCNetwork Inference")
         self.root.resizable(False, False)
@@ -269,13 +276,15 @@ class VisualizerUI:
         self.buttons.grid(row=1, column=1)
 
         if USE_NUMPY:
-            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-mo' \
-                            'del.npy'
+            model_weights = os.path.join(os.path.dirname(os.getcwd()),
+                                         'best-model.npy')
         else:
-            model_weights = 'E:\\Offline Docs\\Git\\minimal-mnist\\best-model' \
-                            '.pth'
-        self.ai = AI('E:\\Offline Docs\\Git\\minimal-mnist\\MNIST',
-                     model_weights)
+            model_weights = os.path.join(os.path.dirname(os.getcwd()),
+                                         'best-model.pth')
+
+        if mnist_root is None:
+            mnist_root = os.path.join(os.getcwd(), 'MNIST')
+        self.ai = AI(mnist_root, model_weights)
 
         self.network_vis = NetworkVisualization(self.ai.layer_1_neurons,
                                                 self.ai.layer_2_neurons,
@@ -313,4 +322,8 @@ class VisualizerUI:
 
 
 if __name__ == '__main__':
-    v = VisualizerUI()
+    p = argparse.ArgumentParser()
+    p.add_argument('-r', type=str, default=None)
+    args = p.parse_args()
+
+    v = VisualizerUI(args.r)
