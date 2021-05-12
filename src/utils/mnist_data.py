@@ -48,8 +48,7 @@ class MNIST:
         self.train = train  # training set or test set
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError('Dataset not found.')
 
         if self.train:
             data_file = self.training_file

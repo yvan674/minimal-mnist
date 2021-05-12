@@ -48,7 +48,11 @@ class AI:
         if USE_NUMPY:
             state_dict = np.load(state_dict_path, allow_pickle=True).item()
         else:
-            state_dict = torch.load(state_dict_path)
+            if torch.cuda.is_available():
+                state_dict = torch.load(state_dict_path)
+            else:
+                state_dict = torch.load(state_dict_path,
+                                        map_location=torch.device('cpu'))
 
         if not USE_NUMPY:
             self.fc1_weight = state_dict['fc1.0.weight'].detach().cpu()
