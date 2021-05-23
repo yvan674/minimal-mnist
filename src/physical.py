@@ -17,7 +17,8 @@ from inference import AI
 from colors import LINEAR_TUPLE
 from argparse import ArgumentParser
 from startup_sequence import startup
-from PIL import Image
+from PIL import Image, ImageTk
+import tkinter as tk
 
 
 PIXEL_PIN = board.D12
@@ -28,9 +29,9 @@ ORDER = neopixel.RGB
 C_LEN = (0, 10, 15, 10, 10)  # Individual Column Lengths
 
 # Animation Parameters
-HALF_PERIOD = 2
-OFFSET = 0.2
-PEAK_DURATIONS = (0.5, 0.5, 1.5, 1.5)
+HALF_PERIOD = 1
+OFFSET = (0.8, 1.0, 1.2, 1.4)
+PEAK_DURATIONS = (1, 1, 1.7, 1.7)
 
 PIXELS = neopixel.NeoPixel(PIXEL_PIN, NUM_PIXELS, brightness=BRIGHTNESS,
                            auto_write=False, pixel_order=ORDER)
@@ -61,8 +62,8 @@ def get_next_values(ai) -> (np.ndarray, int, list, list):
     return img, out, h1, h2
 
 
-def animation_running(curr_time: float, half_period=2, offset=0,
-                       peak_duration=0) -> bool:
+def animation_running(curr_time: float, half_period=2., offset=0.,
+                      peak_duration=0.) -> bool:
     """Calculates based on the given parameters if the animation is finished.
 
     This function is given the parameters of the final column of LEDs.
@@ -71,6 +72,7 @@ def animation_running(curr_time: float, half_period=2, offset=0,
         True if animation is not yet finished.
     """
     return curr_time <= (half_period + offset + peak_duration)
+
 
 def brightness_calc(curr_time: float, half_period=2., offset=0.,
                     peak_duration=0.) -> float:
@@ -111,8 +113,20 @@ def brightness_calc(curr_time: float, half_period=2., offset=0.,
             # otherwise, stay at 0
             return 0.
 
+
 def main(root, model):
     ai = AI(root, model)
+    window = tk.Tk()
+    window.attributes('-fullscreen', True)
+    window.configure(background='black')
+    window.config(cursor="none")
+    canvas = tk.Canvas(window, width=480, height=320, highlightthickness=0,
+                       background='black')
+    black_image = Image.new('RGB', (320, 320), 'black')
+    canvas_image = canvas.create_image(80, 0, anchor='nw',
+                                       image=ImageTk.PhotoImage(black_image))
+    canvas.pack()
+    window.update()
 
     # Initial start condition
     playing = False
@@ -128,6 +142,9 @@ def main(root, model):
                 img = Image.fromarray(img)
                 img = img.resize((320, 320), Image.NEAREST)
                 img = img.rotate(90)
+                img = ImageTk.PhotoImage(img)
+                canvas.itemconfig(canvas_image, image=img)
+                window.update()
 
             # Make h0, h1, out into a linear array of values
             activations = [0] * 45
@@ -149,7 +166,7 @@ def main(root, model):
                 # Iterate by column
                 brightness = brightness_calc(curr_time,
                                              HALF_PERIOD,
-                                             OFFSET * i,
+                                             OFFSET[i],
                                              PEAK_DURATIONS[i])
                 px_vals[sum(C_LEN[:i + 1]):sum(C_LEN[:i + 2])] = [
                     floor(i * brightness)
@@ -161,7 +178,7 @@ def main(root, model):
                 PIXELS[i]=LINEAR_TUPLE[px_vals[i]]
 
             PIXELS.show()
-            playing = animation_running(curr_time, HALF_PERIOD, OFFSET * 3,
+            playing = animation_running(curr_time, HALF_PERIOD, OFFSET[3],
                                         PEAK_DURATIONS[3])
             sleep(0.0005)
 
