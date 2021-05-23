@@ -17,6 +17,7 @@ from inference import AI
 from colors import LINEAR_TUPLE
 from argparse import ArgumentParser
 from startup_sequence import startup
+from PIL import Image
 
 
 SLEEP_DURATION = 1
@@ -63,6 +64,7 @@ def main(root, model):
     current_tick = 0
     img, out, h0, h1 = get_next_values(ai)
 
+
     while True:
         if not playing:
             # If it's done playing the animation, do the next one after 1 second
@@ -72,6 +74,12 @@ def main(root, model):
         else:
             step = int(floor(current_tick / 255))
             t_val = current_tick % 255
+            # Check to see if the image is an image or a numpy array
+            if not isinstance(img, Image.Image):
+                # If it isn't, then turn it into one and rotate and resize it
+                img = Image.fromarray(img)
+                img = img.resize((320, 320), Image.NEAREST)
+                img = img.rotate(90)
 
             if step == 2:
                 # Finish layer animation, aka output layer
@@ -80,10 +88,10 @@ def main(root, model):
                     if i == out:
                         color = LINEAR_TUPLE[floor(t_val)]
                         PIXELS[px_val] = color       # Neuron
-                        PIXELS[px_val + 10] = color  # Number
+                        PIXELS[(i + 1) * -1] = color  # Number
                     else:
-                        PIXELS[px_val] = LINEAR_TUPLE[0]       # Neuron
-                        PIXELS[px_val + 10] = LINEAR_TUPLE[0]  # Number
+                        PIXELS[px_val] = LINEAR_TUPLE[0]        # Neuron
+                        PIXELS[(i + 1) * -1] = LINEAR_TUPLE[0]  # Number
             elif step < 2:
                 for i in range(NN_LAYERS[step]):
                     if step == 0:
@@ -110,5 +118,5 @@ def main(root, model):
 if __name__ == '__main__':
     args = parse_args()
     startup()
-    sleep(2)
+    sleep(0.5)
     main(args.ROOT, args.MODEL)

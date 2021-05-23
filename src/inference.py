@@ -1,6 +1,7 @@
 """Inference.
 
-Runs inference using a trained network.
+Runs inference using a trained network. Raise ImportError when importing torch
+to force numpy.
 
 Author:
     Yvan Satyawan <y_satyawan@hotmail.com>
@@ -9,7 +10,7 @@ Created on:
     April 3, 2020
 """
 try:
-    # raise ImportError
+#    raise ImportError
     import torch
     from torchvision.datasets import MNIST
     from model import FCNetwork as NNModel
