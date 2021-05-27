@@ -19,6 +19,8 @@ from argparse import ArgumentParser
 from startup_sequence import startup
 from PIL import Image, ImageTk
 import tkinter as tk
+import signal
+import sys
 
 
 PIXEL_PIN = board.D12
@@ -44,6 +46,14 @@ def parse_args():
     p.add_argument('MODEL', type=str, help='path to the NN model')
 
     return p.parse_args()
+
+
+def handle_exit(sig, frame):
+    # Handle shutdowns gracefully
+    raise SystemExit
+
+
+signal.signal(signal.SIGTERM, handle_exit)
 
 
 def get_next_values(ai) -> (np.ndarray, int, list, list):
@@ -114,8 +124,23 @@ def brightness_calc(curr_time: float, half_period=2., offset=0.,
             return 0.
 
 
+def fade_on():
+    """Fades to the LED default color state."""
+    target_color = LINEAR_TUPLE[0]
+    start_time = time()
+    duration = HALF_PERIOD / 2
+    elapsed_time = 0.
+    while elapsed_time <= duration:
+        current_color = [floor(color * (elapsed_time / duration))
+                         for color in target_color]
+        PIXELS.fill(current_color)
+        PIXELS.show()
+        sleep(0.0005)
+        elapsed_time = time() - start_time
+
+
 def main(root, model):
-    ai = AI(root, model)
+    # First initialize the LEDs and the screen
     window = tk.Tk()
     window.attributes('-fullscreen', True)
     window.configure(background='black')
@@ -127,6 +152,11 @@ def main(root, model):
                                        image=ImageTk.PhotoImage(black_image))
     canvas.pack()
     window.update()
+
+    fade_on()
+
+    # Then initialize the AI
+    ai = AI(root, model)
 
     # Initial start condition
     playing = False
@@ -186,5 +216,9 @@ def main(root, model):
 if __name__ == '__main__':
     args = parse_args()
     startup()
-    sleep(0.5)
-    main(args.ROOT, args.MODEL)
+    try:
+        main(args.ROOT, args.MODEL)
+    except (KeyboardInterrupt, SystemExit):
+        PIXELS.fill((0, 0, 0))
+        PIXELS.show()
+        sys.exit()
